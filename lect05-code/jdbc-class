@@ -1,0 +1,84 @@
+#!/bin/sh
+exec scala -nocompdaemon -usejavacp "$0" "$@"
+!#
+
+/*
+Christian Söderberg, Jan 30 2017
+
+When we work with JDBC, we want to have a simple way to create classes
+with the (immutable) values returned from a query -- with this script
+we define our return type, and the values in the query, using the
+following syntax:
+
+------------------------------------------------------------
+Application
+s_id -> studentId : String
+gpa : double
+------------------------------------------------------------
+
+i.e., first the class name, then one row per value we fetch, with
+optional renaming of the attributes.
+
+The example above will be translated into:
+
+------------------------------------------------------------
+class Application {
+
+    public final String studentId;
+    public final double gpa;
+
+    public Application  (ResultSet rs) {
+        this.studentId = rs.getString("s_id");
+        this.gpa = rs.getDouble("gpa");
+    }
+}
+------------------------------------------------------------
+*/
+
+trait DSL {
+
+  val AliasedAttribute = """\s*([^:->\s]+)\s*->\s*([^:\s]+)\s*:\s*([^:\s]+)\s*""".r
+  val UnaliasedAttribute = """\s*([^:\s]+)\s*:\s*([^:\s]+)\s*""".r
+
+  case class ClassName(name: String)
+  case class Attribute(name: String, alias: String, tpe: String)
+
+  def parse(input: Stream[String]): (String, Stream[Attribute]) =
+    (input.head, input.tail.collect {
+      case AliasedAttribute(name, alias, tpe) => Attribute(name, alias, tpe)
+      case UnaliasedAttribute(name, tpe)      => Attribute(name, name, tpe)
+    })
+
+  def generateClass(className: String, attributes: Stream[Attribute]): String = {
+    val nl = "\n"
+
+    val decl = attributes.map {case Attribute(name, alias, tpe) =>
+      f"    public final $tpe $alias;"
+    }.mkString(nl)
+
+    val rsConstr =
+      f"    public $className  (ResultSet rs) throws SQLException {" + nl +
+    attributes.map {case Attribute(name, alias, tpe) =>
+      f"""        this.$alias = rs.get${tpe.capitalize}("$name");"""
+    }.mkString(nl) + nl +
+    "    }"
+
+    f"class $className {" + nl + nl +
+    decl + nl +
+    nl +
+    rsConstr + nl +
+    "}"
+  }
+}
+
+object Main extends DSL {
+
+  def run() = {
+    val (className, attributes) =
+      parse(io.Source.stdin.getLines.toStream.filterNot(_.isEmpty))
+
+    println(generateClass(className, attributes))
+  }
+}
+
+Main.run

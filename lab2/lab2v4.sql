@@ -67,16 +67,22 @@ create table User (
 	primary key (username)
 );
 
-create table Ticket (	
+create table Ticket (
+	
+	date date,	
 	username varchar(20),
 	id integer,
 	primary key (id),
 	foreign key (id) references Reservation(id),
 	foreign key (username) references User(username)
+	foreign key ( date) references MoviePreformance(movie,date)
 );
 
 insert into Movie(title)
 values ("Star Wars");
+
+-- insert into Movie(title)
+-- values ("Star Wars");
 
 insert into Movie(title)
 values ("Assassin's Creed");
@@ -86,6 +92,9 @@ values ("Lala Land");
 
 insert into Theater(name, seats)
 values ("Salong 1", 300);
+
+-- insert into Theater(name, seats)
+-- values ("Salong 1", 200);
 
 insert into Theater(name, seats)
 values ("Salong 2", 170);
@@ -99,11 +108,11 @@ values ("11-11-11", 2);
 insert into MoviePreformance(date, prefNbr)
 values ("11-11-12", 1);
 
-/*insert into Plays(title, prefNbr, date)
+insert into Plays(title, prefNbr, date)
 values ("Star Wars", 1, "11-11-11");
 
-insert into Plays(title, prefNbr, date)
-values ("Star Wars", 2, "11-11-11");*/
+-- insert into Plays(title, prefNbr, date)
+-- values ("Star Wars", 2, "11-11-11");
 
 insert into Reservation(id)
 values (5);

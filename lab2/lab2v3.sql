@@ -32,7 +32,7 @@ create table Ticket (
 	movie varchar(20),
 	date date,
 	username varchar(20),
-	primary key (movie, date, id),
+	primary key (id, movie, date),
 	foreign key (username) references User(username),
 	foreign key (movie, date) references MoviePreformance(movie, date)
 );
